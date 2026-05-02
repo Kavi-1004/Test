@@ -108,7 +108,9 @@ export default function QuotationEditor({ quotationId }: Props) {
         }
         setLoading(false);
       })
-      .catch(() => {});
+      .catch((e: Error) => {
+        if (e?.name !== "AbortError") setLoading(false);
+      });
     return () => controller.abort();
   }, [quotationId, refreshKey]);
 
