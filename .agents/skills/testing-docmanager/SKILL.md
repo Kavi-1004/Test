@@ -1,84 +1,64 @@
-# Testing DocManager ERP-lite
+# Testing DocManager ERP-lite MVP
 
 ## Environment Setup
 
-1. Ensure PostgreSQL is running on `localhost:5432` with database `docmanager`
-2. Run `npx prisma db push` and `npx prisma db seed` if DB is empty
-3. Start dev server: `npm run dev` (port 3000)
-4. Verify server is up: `curl -s -o /dev/null -w '%{http_code}' http://localhost:3000/login` should return 200
+1. Ensure PostgreSQL is running: `pg_isready -h localhost -p 5432`
+2. Set up environment variables in `.env` (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL)
+3. Run Prisma migrations: `npx prisma migrate deploy`
+4. Seed the database: `npx prisma db seed`
+5. Start dev server: `npm run dev` (runs on port 3000)
 
 ## Devin Secrets Needed
 
-No external secrets required. All credentials are local dev-only:
-- DB: `postgresql://devuser:devpass@localhost:5432/docmanager`
+No external secrets required — the app uses local PostgreSQL with dev credentials:
+- Database: `postgresql://devuser:devpass@localhost:5432/docmanager`
 - Admin login: `admin@docmanager.com` / `admin123`
-- JWT secret is hardcoded for dev in `.env`
 
-## Authentication
+## Test Credentials
 
-- Login at `/login` with `admin@docmanager.com` / `admin123`
-- JWT token stored in `auth-token` cookie
-- Session persists across page navigations within the same browser session
+- **Admin user**: `admin@docmanager.com` / `admin123` (seeded by `prisma/seed.ts`)
+- Login page shows default credentials at the bottom as a hint
 
-## Key Testing Flows
+## Key Testing Workflows
 
-### Quotation Create → Edit Workflow (Critical Path)
+### Core Document Flow
+1. **Login** → Dashboard (verify 9 sidebar nav items)
+2. **Companies** → Add Company with short code (e.g., ACME) — this sets up the document ID prefix
+3. **Customers** → Add Customer with contact details
+4. **Quotations** → New Quotation (split-screen editor)
+   - Select Company and Customer from dropdowns
+   - Company selection auto-fills Tax Rate from company settings
+   - Add items with Description, Qty, Unit, Unit Price
+   - Set Discount and Tax Rate in Totals section
+   - Live preview updates in real-time on the right panel
+5. **Save Draft** → Generates document ID in format `SHORTCODE-Q-YYYYMMDD-###`
+6. **Dashboard** → Verify metrics increment
+7. **Audit Logs** → Verify CREATED entries for each entity
+8. **Settings** → Toggle feature modules on/off, save, verify success message
 
-This is the most important flow to test — it involves client-side navigation via `router.push()` which can cause React component reuse bugs.
+### Calculation Verification
+For quotation calculations, use specific values that produce verifiable results:
+- Example: Steel Beams (10 × $250 = $2,500) + Bolts (100 × $5 = $500) = Subtotal $3,000
+- Discount $50, Tax 10%: Tax = ($3,000 - $50) × 0.10 = $295
+- Grand Total = $3,000 - $50 + $295 = $3,245
 
-1. Navigate to `/quotations/new`
-2. Select company and customer from dropdowns
-3. Enter title, add items with quantities and prices
-4. Set discount and tax rate
-5. Click "Save Draft"
-6. **Verify**: Page redirects to `/quotations/{id}/edit` with ALL form fields populated
-7. **Key assertion**: Company/customer dropdowns should NOT show "Select company"/"Select customer" — they should show the saved values
+## Navigation Tips
 
-### What a broken edit page looks like:
-- Company dropdown: "Select company" (instead of saved company)
-- Customer dropdown: "Select customer" (instead of saved customer)
-- Title: empty
-- Items: single default empty row with qty=1, price=0
-- Totals: all $0.00
+- Sidebar has 9 items: Dashboard, Companies, Customers, Quotations, Purchase Orders, Delivery Orders, Invoices, Audit Logs, Settings
+- Company/Customer forms appear inline (not modals) when clicking "Add" buttons
+- Quotation editor is at `/quotations/new` — uses split-screen layout
+- Settings page has toggle switches for each module + Save Settings button
 
-## Common Pitfalls
+## Known Issues
 
-### React Form Interactions via Computer Use
-- Clicking near the "+ Add Item" button area might accidentally trigger multiple item additions
-- When filling item rows, use the JavaScript console with `nativeInputValueSetter` pattern for reliable React state updates:
-  ```js
-  const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-  nativeInputValueSetter.call(element, 'value');
-  element.dispatchEvent(new Event('input', { bubbles: true }));
-  ```
-- Select dropdowns work fine with native click interactions
-- The totals section (discount, tax) might be offscreen — scroll down or use console to set values
+- **Edit page data loading**: The quotation edit page (`/quotations/{id}/edit`) might not populate form fields with saved data after redirect from creation. The quotation is saved correctly (verifiable in the list view), but the edit form may show empty/default values. This may be a race condition or missing data fetch in the edit page component.
+- **Dropdown selection**: When selecting from Company/Customer dropdowns, click the dropdown first to open it, then click the option. The DOM uses native `<select>` elements.
+- **Number inputs**: When changing number fields (Qty, Unit Price), use triple-click to select all existing text before typing the new value to avoid appending.
 
-### Document ID Format
-- Quotations: `COMPANYSHORT-Q-YYYYMMDD-NNN` (e.g., `ACME-Q-20260502-001`)
-- The date in the ID comes from the quotation date field, not the creation timestamp
+## Testing Approach
 
-### Expected Calculation Formula
-- Subtotal = sum of (qty × price) for each item
-- Discount is a flat dollar amount subtracted from subtotal
-- Tax = (subtotal - discount) × (taxRate / 100)
-- Grand Total = subtotal - discount + tax
-
-## Modules Available for Testing
-
-| Module | URL | Notes |
-|--------|-----|-------|
-| Dashboard | `/` | Shows metrics: total quotations, approved, etc. |
-| Companies | `/companies` | CRUD with short codes |
-| Customers | `/customers` | CRUD with contact info |
-| Quotations | `/quotations` | Split-screen editor with live preview |
-| Purchase Orders | `/purchase-orders` | URL-based PO attachment |
-| Delivery Orders | `/delivery-orders` | Generate from approved quotations |
-| Invoices | `/invoices` | Generate from delivery orders |
-| Audit Logs | `/logs` | Shows CREATED/EDITED/DELETED entries |
-| Settings | `/settings` | Feature toggles, saves with success message |
-
-## Branch Info
-
-- Main development branch: `base` (not `main` or `master`)
-- PRs should target `base`
+- Use browser GUI interactions (not curl/API calls) for the most realistic end-to-end testing
+- Record the browser session for visual proof
+- Annotate key moments: test_start when beginning each test, assertion when verifying results
+- Take screenshots at critical verification points (calculations, list views, dashboard metrics)
+- Always verify both the editor values AND the live preview values match for quotation tests
