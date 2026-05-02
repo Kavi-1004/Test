@@ -9,5 +9,5 @@ export default function EditQuotationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  return <QuotationEditor quotationId={id} />;
+  return <QuotationEditor key={id} quotationId={id} />;
 }
