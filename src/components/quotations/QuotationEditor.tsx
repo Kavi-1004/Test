@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Save, Printer, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Save, Printer, ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 import QuotationPreview from "./QuotationPreview";
 
@@ -44,6 +44,7 @@ export default function QuotationEditor({ quotationId }: Props) {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const [companyId, setCompanyId] = useState("");
   const [customerId, setCustomerId] = useState("");
@@ -71,44 +72,45 @@ export default function QuotationEditor({ quotationId }: Props) {
 
   useEffect(() => {
     const controller = new AbortController();
-    Promise.all([
+    const fetches: Promise<unknown>[] = [
       fetch("/api/companies", { signal: controller.signal }).then((r) => r.json()),
       fetch("/api/customers", { signal: controller.signal }).then((r) => r.json()),
-    ])
-      .then(([c, cu]) => {
+    ];
+    if (quotationId) {
+      fetches.push(
+        fetch(`/api/quotations/${quotationId}`, { signal: controller.signal })
+          .then((r) => r.ok ? r.json() : null)
+      );
+    }
+    Promise.all(fetches)
+      .then((results) => {
+        const [c, cu, q] = results as [Company[], Customer[], Record<string, unknown> | undefined];
         setCompanies(c);
         setCustomers(cu);
+        if (q) {
+          setCompanyId(q.companyId as string);
+          setCustomerId(q.customerId as string);
+          setTitle((q.title as string) || "");
+          setStatus(q.status as string);
+          setItems(
+            (q.items as QuotationItem[]).map((item: QuotationItem) => ({
+              ...item,
+              total: item.quantity * item.unitPrice,
+            }))
+          );
+          setDiscount(q.discount as number);
+          setTaxRate(q.taxRate as number);
+          setTerms((q.terms as string) || "");
+          setWarranty((q.warranty as string) || "");
+          setFooter((q.footer as string) || "");
+          setQuotationNumber(q.quotationNumber as string);
+          setDate((q.date as string).split("T")[0]);
+        }
+        setLoading(false);
       })
-      .catch(() => {});
-    return () => controller.abort();
-  }, []);
-
-  useEffect(() => {
-    if (!quotationId) return;
-    const controller = new AbortController();
-    fetch(`/api/quotations/${quotationId}`, { signal: controller.signal })
-      .then((r) => r.ok ? r.json() : null)
-      .then((q) => {
-        if (!q) return;
-        setCompanyId(q.companyId);
-        setCustomerId(q.customerId);
-        setTitle(q.title || "");
-        setStatus(q.status);
-        setItems(
-          q.items.map((item: QuotationItem) => ({
-            ...item,
-            total: item.quantity * item.unitPrice,
-          }))
-        );
-        setDiscount(q.discount);
-        setTaxRate(q.taxRate);
-        setTerms(q.terms || "");
-        setWarranty(q.warranty || "");
-        setFooter(q.footer || "");
-        setQuotationNumber(q.quotationNumber);
-        setDate(q.date.split("T")[0]);
-      })
-      .catch(() => {});
+      .catch((e: Error) => {
+        if (e?.name !== "AbortError") setLoading(false);
+      });
     return () => controller.abort();
   }, [quotationId, refreshKey]);
 
@@ -179,6 +181,14 @@ export default function QuotationEditor({ quotationId }: Props) {
 
   function handlePrint() {
     window.print();
+  }
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
   }
 
   return (
