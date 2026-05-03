@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, Save, Printer, ArrowLeft, Loader2 } from "lucide-react";
+import { Plus, Trash2, Save, Printer, ArrowLeft, Loader2, Download, Mail } from "lucide-react";
 import Link from "next/link";
 import QuotationPreview from "./QuotationPreview";
 
@@ -179,6 +179,41 @@ export default function QuotationEditor({ quotationId }: Props) {
     }
   }
 
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSubject, setEmailSubject] = useState("");
+  const [emailMessage, setEmailMessage] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+
+  function handleDownloadPDF() {
+    if (!quotationId) return;
+    window.open(`/api/quotations/${quotationId}/pdf`, "_blank");
+  }
+
+  async function handleSendEmail() {
+    if (!quotationId || !emailTo) return;
+    setEmailSending(true);
+    try {
+      const res = await fetch(`/api/quotations/${quotationId}/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: emailTo, subject: emailSubject, message: emailMessage }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Email sent successfully!");
+        setShowEmailDialog(false);
+        setEmailTo("");
+        setEmailSubject("");
+        setEmailMessage("");
+      } else {
+        alert(`Failed to send email: ${data.error || "Unknown error"}`);
+      }
+    } finally {
+      setEmailSending(false);
+    }
+  }
+
   function handlePrint() {
     window.print();
   }
@@ -222,6 +257,25 @@ export default function QuotationEditor({ quotationId }: Props) {
           >
             <Save className="w-4 h-4" /> Save & Send
           </button>
+          {quotationId && (
+            <button
+              onClick={handleDownloadPDF}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium print:hidden"
+            >
+              <Download className="w-4 h-4" /> PDF
+            </button>
+          )}
+          {quotationId && (
+            <button
+              onClick={() => {
+                setEmailTo(selectedCustomer?.email || "");
+                setShowEmailDialog(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium print:hidden"
+            >
+              <Mail className="w-4 h-4" /> Email
+            </button>
+          )}
           <button
             onClick={handlePrint}
             className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium print:hidden"
@@ -434,6 +488,45 @@ export default function QuotationEditor({ quotationId }: Props) {
           </div>
         </div>
       </div>
+
+      {showEmailDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 print:hidden">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Email Quotation</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">To *</label>
+                <input type="email" value={emailTo} onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="recipient@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Subject (optional)</label>
+                <input value={emailSubject} onChange={(e) => setEmailSubject(e.target.value)}
+                  placeholder="Auto-generated if empty"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Message (optional)</label>
+                <textarea value={emailMessage} onChange={(e) => setEmailMessage(e.target.value)}
+                  rows={3} placeholder="Additional message..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <p className="text-xs text-gray-500">The quotation PDF will be attached automatically.</p>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setShowEmailDialog(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">
+                Cancel
+              </button>
+              <button onClick={handleSendEmail} disabled={!emailTo || emailSending}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                {emailSending ? "Sending..." : "Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
