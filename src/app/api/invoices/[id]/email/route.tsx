@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { createLog } from "@/lib/log";
-import { sendEmail } from "@/lib/email";
+import { sendEmail, escapeHtml } from "@/lib/email";
 import { renderToBuffer } from "@react-pdf/renderer";
 import { InvoicePDF } from "@/lib/pdf/invoice-pdf";
 
@@ -70,7 +70,7 @@ export async function POST(
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
       <h2 style="color: #dc2626;">Invoice ${invoice.invoiceNumber}</h2>
       <p>Dear ${invoice.customer.contactPerson || invoice.customer.name},</p>
-      ${message ? `<p>${message}</p>` : `<p>Please find attached the invoice from ${invoice.company.name}.</p>`}
+      ${message ? `<p>${escapeHtml(message)}</p>` : `<p>Please find attached the invoice from ${invoice.company.name}.</p>`}
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <tr style="background: #f9fafb;">
           <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Invoice #</td>

@@ -28,7 +28,10 @@ export async function POST(request: NextRequest) {
     "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
   ];
 
-  if (!allowedTypes.includes(file.type)) {
+  const allowedExtensions = [".pdf", ".png", ".jpg", ".jpeg", ".doc", ".docx"];
+  const ext = path.extname(file.name).toLowerCase();
+
+  if (!allowedTypes.includes(file.type) || !allowedExtensions.includes(ext)) {
     return NextResponse.json(
       { error: "Invalid file type. Allowed: PDF, PNG, JPG, DOC, DOCX" },
       { status: 400 }
@@ -45,8 +48,7 @@ export async function POST(request: NextRequest) {
 
   await mkdir(UPLOAD_DIR, { recursive: true });
 
-  const ext = path.extname(file.name) || ".pdf";
-  const uniqueName = `${randomUUID()}${ext}`;
+  const uniqueName = `${randomUUID()}${ext || ".pdf"}`;
   const filePath = path.join(UPLOAD_DIR, uniqueName);
 
   const bytes = await file.arrayBuffer();
