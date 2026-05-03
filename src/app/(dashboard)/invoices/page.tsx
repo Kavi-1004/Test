@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Receipt, Search, Plus, Trash2, Eye } from "lucide-react";
+import { Receipt, Search, Plus, Trash2, Eye, Download, Mail } from "lucide-react";
 import Link from "next/link";
 
 interface Invoice {
@@ -45,6 +45,38 @@ export default function InvoicesPage() {
     if (!confirm("Delete this invoice?")) return;
     await fetch(`/api/invoices/${id}`, { method: "DELETE" });
     setRefreshKey((k) => k + 1);
+  }
+
+  const [showEmailDialog, setShowEmailDialog] = useState(false);
+  const [emailInvoiceId, setEmailInvoiceId] = useState("");
+  const [emailTo, setEmailTo] = useState("");
+  const [emailSending, setEmailSending] = useState(false);
+
+  function handleEmailInvoice(id: string) {
+    setEmailInvoiceId(id);
+    setEmailTo("");
+    setShowEmailDialog(true);
+  }
+
+  async function sendInvoiceEmail() {
+    if (!emailTo || !emailInvoiceId) return;
+    setEmailSending(true);
+    try {
+      const res = await fetch(`/api/invoices/${emailInvoiceId}/email`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ to: emailTo }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        alert("Invoice email sent successfully!");
+        setShowEmailDialog(false);
+      } else {
+        alert(`Failed: ${data.error || "Unknown error"}`);
+      }
+    } finally {
+      setEmailSending(false);
+    }
   }
 
   async function handleStatusUpdate(id: string, status: string) {
@@ -127,10 +159,16 @@ export default function InvoicesPage() {
                   </td>
                   <td className="px-4 py-3 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <Link href={`/invoices/new?id=${inv.id}`} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded">
+                      <Link href={`/invoices/new?id=${inv.id}`} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded" title="View">
                         <Eye className="w-4 h-4" />
                       </Link>
-                      <button onClick={() => handleDelete(inv.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded">
+                      <a href={`/api/invoices/${inv.id}/pdf`} target="_blank" rel="noreferrer" className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded" title="Download PDF">
+                        <Download className="w-4 h-4" />
+                      </a>
+                      <button onClick={() => handleEmailInvoice(inv.id)} className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded" title="Email Invoice">
+                        <Mail className="w-4 h-4" />
+                      </button>
+                      <button onClick={() => handleDelete(inv.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Delete">
                         <Trash2 className="w-4 h-4" />
                       </button>
                     </div>
@@ -141,6 +179,33 @@ export default function InvoicesPage() {
           </table>
         </div>
       </div>
+
+      {showEmailDialog && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-semibold mb-4">Email Invoice</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Email *</label>
+                <input type="email" value={emailTo} onChange={(e) => setEmailTo(e.target.value)}
+                  placeholder="recipient@example.com"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+              </div>
+              <p className="text-xs text-gray-500">The invoice PDF will be attached automatically.</p>
+            </div>
+            <div className="flex justify-end gap-2 mt-4">
+              <button onClick={() => setShowEmailDialog(false)}
+                className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium hover:bg-gray-50">
+                Cancel
+              </button>
+              <button onClick={sendInvoiceEmail} disabled={!emailTo || emailSending}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 disabled:opacity-50">
+                {emailSending ? "Sending..." : "Send Email"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { Upload, Search, Plus, Trash2, FileDown } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Upload, Search, Plus, Trash2, FileDown, Loader2 } from "lucide-react";
 
 interface PurchaseOrder {
   id: string;
@@ -29,6 +29,8 @@ export default function PurchaseOrdersPage() {
   const [search, setSearch] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [form, setForm] = useState({
     poNumber: "",
     quotationId: "",
@@ -67,6 +69,26 @@ export default function PurchaseOrdersPage() {
     if (!confirm("Delete this purchase order?")) return;
     await fetch(`/api/purchase-orders/${id}`, { method: "DELETE" });
     setRefreshKey((k) => k + 1);
+  }
+
+  async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/upload", { method: "POST", body: formData });
+      if (res.ok) {
+        const data = await res.json();
+        setForm((prev) => ({ ...prev, fileUrl: data.fileUrl, fileName: data.fileName }));
+      } else {
+        const err = await res.json();
+        alert(`Upload failed: ${err.error || "Unknown error"}`);
+      }
+    } finally {
+      setUploading(false);
+    }
   }
 
   function onQuotationSelect(quotationId: string) {
@@ -132,23 +154,21 @@ export default function PurchaseOrdersPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">File URL</label>
-              <input
-                value={form.fileUrl}
-                onChange={(e) => setForm({ ...form, fileUrl: e.target.value })}
-                placeholder="URL to PO document"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">File Name</label>
-              <input
-                value={form.fileName}
-                onChange={(e) => setForm({ ...form, fileName: e.target.value })}
-                placeholder="e.g., PO-2024-001.pdf"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Upload PO Document</label>
+              <div className="flex items-center gap-3">
+                <input ref={fileInputRef} type="file" accept=".pdf,.png,.jpg,.jpeg,.doc,.docx"
+                  onChange={handleFileUpload} className="hidden" />
+                <button type="button" onClick={() => fileInputRef.current?.click()} disabled={uploading}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 text-sm font-medium disabled:opacity-50">
+                  {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                  {uploading ? "Uploading..." : "Choose File"}
+                </button>
+                {form.fileName && (
+                  <span className="text-sm text-green-600 font-medium">{form.fileName}</span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Accepted: PDF, PNG, JPG, DOC, DOCX (max 10MB)</p>
             </div>
             <div className="md:col-span-2">
               <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
