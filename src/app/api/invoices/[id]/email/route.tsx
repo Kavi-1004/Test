@@ -68,9 +68,9 @@ export async function POST(
   const emailSubject = subject || `Invoice ${invoice.invoiceNumber} from ${invoice.company.name}`;
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #dc2626;">Invoice ${invoice.invoiceNumber}</h2>
-      <p>Dear ${invoice.customer.contactPerson || invoice.customer.name},</p>
-      ${message ? `<p>${escapeHtml(message)}</p>` : `<p>Please find attached the invoice from ${invoice.company.name}.</p>`}
+      <h2 style="color: #dc2626;">Invoice ${escapeHtml(invoice.invoiceNumber)}</h2>
+      <p>Dear ${escapeHtml(invoice.customer.contactPerson || invoice.customer.name)},</p>
+      ${message ? `<p>${escapeHtml(message)}</p>` : `<p>Please find attached the invoice from ${escapeHtml(invoice.company.name)}.</p>`}
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <tr style="background: #f9fafb;">
           <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Invoice #</td>

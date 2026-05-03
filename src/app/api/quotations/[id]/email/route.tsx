@@ -66,9 +66,9 @@ export async function POST(
   const emailSubject = subject || `Quotation ${quotation.quotationNumber} from ${quotation.company.name}`;
   const emailHtml = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-      <h2 style="color: #2563eb;">Quotation ${quotation.quotationNumber}</h2>
-      <p>Dear ${quotation.customer.contactPerson || quotation.customer.name},</p>
-      ${message ? `<p>${escapeHtml(message)}</p>` : `<p>Please find attached the quotation from ${quotation.company.name}.</p>`}
+      <h2 style="color: #2563eb;">Quotation ${escapeHtml(quotation.quotationNumber)}</h2>
+      <p>Dear ${escapeHtml(quotation.customer.contactPerson || quotation.customer.name)},</p>
+      ${message ? `<p>${escapeHtml(message)}</p>` : `<p>Please find attached the quotation from ${escapeHtml(quotation.company.name)}.</p>`}
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <tr style="background: #f9fafb;">
           <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Quotation #</td>
