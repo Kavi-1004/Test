@@ -74,7 +74,7 @@ export async function POST(
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <tr style="background: #f9fafb;">
           <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Invoice #</td>
-          <td style="padding: 8px; border: 1px solid #e5e7eb;">${invoice.invoiceNumber}</td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(invoice.invoiceNumber)}</td>
         </tr>
         <tr>
           <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Date</td>

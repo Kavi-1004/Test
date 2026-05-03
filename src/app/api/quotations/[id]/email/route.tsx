@@ -72,7 +72,7 @@ export async function POST(
       <table style="width: 100%; border-collapse: collapse; margin: 16px 0;">
         <tr style="background: #f9fafb;">
           <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Quotation #</td>
-          <td style="padding: 8px; border: 1px solid #e5e7eb;">${quotation.quotationNumber}</td>
+          <td style="padding: 8px; border: 1px solid #e5e7eb;">${escapeHtml(quotation.quotationNumber)}</td>
         </tr>
         <tr>
           <td style="padding: 8px; border: 1px solid #e5e7eb; font-weight: bold;">Date</td>
