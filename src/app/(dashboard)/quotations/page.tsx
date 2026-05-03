@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, Plus, Search, Eye, Copy, RefreshCw, Trash2 } from "lucide-react";
+import { FileText, Plus, Search, Eye, Copy, RefreshCw, Trash2, Download } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -157,6 +157,9 @@ export default function QuotationsPage() {
                         <Link href={`/quotations/${q.id}/edit`} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded" title="View/Edit">
                           <Eye className="w-4 h-4" />
                         </Link>
+                        <a href={`/api/quotations/${q.id}/pdf`} target="_blank" rel="noreferrer" className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded" title="Download PDF">
+                          <Download className="w-4 h-4" />
+                        </a>
                         <button onClick={() => handleDuplicate(q.id)} className="p-1.5 text-gray-500 hover:text-purple-600 hover:bg-purple-50 rounded" title="Duplicate">
                           <Copy className="w-4 h-4" />
                         </button>

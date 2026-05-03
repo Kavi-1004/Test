@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Truck, Search, Plus, Trash2, Eye } from "lucide-react";
+import { Truck, Search, Plus, Trash2, Eye, Download } from "lucide-react";
 import Link from "next/link";
 
 interface DeliveryOrder {
@@ -107,10 +107,13 @@ export default function DeliveryOrdersPage() {
                     </td>
                     <td className="px-4 py-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        <Link href={`/delivery-orders/new?id=${d.id}`} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded">
+                        <Link href={`/delivery-orders/new?id=${d.id}`} className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded" title="View">
                           <Eye className="w-4 h-4" />
                         </Link>
-                        <button onClick={() => handleDelete(d.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded">
+                        <a href={`/api/delivery-orders/${d.id}/pdf`} target="_blank" rel="noreferrer" className="p-1.5 text-gray-500 hover:text-green-600 hover:bg-green-50 rounded" title="Download PDF">
+                          <Download className="w-4 h-4" />
+                        </a>
+                        <button onClick={() => handleDelete(d.id)} className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" title="Delete">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
