@@ -1,64 +1,77 @@
-# Testing DocManager ERP-lite MVP
+# Testing DocManager ERP-lite
 
-## Environment Setup
+## Prerequisites
 
-1. Ensure PostgreSQL is running: `pg_isready -h localhost -p 5432`
-2. Set up environment variables in `.env` (DATABASE_URL, NEXTAUTH_SECRET, NEXTAUTH_URL)
-3. Run Prisma migrations: `npx prisma migrate deploy`
-4. Seed the database: `npx prisma db seed`
-5. Start dev server: `npm run dev` (runs on port 3000)
+### Dev Server
+```bash
+cd /home/ubuntu/repos/Test
+npm run dev
+# Runs on http://localhost:3000
+```
+
+### Database
+- PostgreSQL must be running on localhost:5432
+- Database: `docmanager`, User: `devuser`, Password: `devpass`
+- Run `npx prisma db push` if schema changes, then `npx prisma db seed` for test data
+
+### Login Credentials
+- Admin: `admin@docmanager.com` / `admin123`
+- Role-based access: admin has full access, user role has restricted access
 
 ## Devin Secrets Needed
-
-No external secrets required — the app uses local PostgreSQL with dev credentials:
-- Database: `postgresql://devuser:devpass@localhost:5432/docmanager`
-- Admin login: `admin@docmanager.com` / `admin123`
-
-## Test Credentials
-
-- **Admin user**: `admin@docmanager.com` / `admin123` (seeded by `prisma/seed.ts`)
-- Login page shows default credentials at the bottom as a hint
+- No secrets required for local testing — all credentials are dev-only defaults
+- For email testing: `SMTP_HOST`, `SMTP_USER`, `SMTP_PASS` (optional — app gracefully handles missing SMTP config)
 
 ## Key Testing Workflows
 
-### Core Document Flow
-1. **Login** → Dashboard (verify 9 sidebar nav items)
-2. **Companies** → Add Company with short code (e.g., ACME) — this sets up the document ID prefix
-3. **Customers** → Add Customer with contact details
-4. **Quotations** → New Quotation (split-screen editor)
-   - Select Company and Customer from dropdowns
-   - Company selection auto-fills Tax Rate from company settings
-   - Add items with Description, Qty, Unit, Unit Price
-   - Set Discount and Tax Rate in Totals section
-   - Live preview updates in real-time on the right panel
-5. **Save Draft** → Generates document ID in format `SHORTCODE-Q-YYYYMMDD-###`
-6. **Dashboard** → Verify metrics increment
-7. **Audit Logs** → Verify CREATED entries for each entity
-8. **Settings** → Toggle feature modules on/off, save, verify success message
+### 1. Quotation PDF Export
+- Navigate to `/quotations` and click the green download icon
+- PDF opens in new tab via `/api/quotations/{id}/pdf`
+- Verify: company header, customer details, items table, totals, footer
+- Uses `@react-pdf/renderer` server-side — no browser PDF engine needed
 
-### Calculation Verification
-For quotation calculations, use specific values that produce verifiable results:
-- Example: Steel Beams (10 × $250 = $2,500) + Bolts (100 × $5 = $500) = Subtotal $3,000
-- Discount $50, Tax 10%: Tax = ($3,000 - $50) × 0.10 = $295
-- Grand Total = $3,000 - $50 + $295 = $3,245
+### 2. PO File Upload
+- Navigate to `/purchase-orders` → "Upload PO"
+- **Important**: The quotation dropdown only shows quotations with `status=SENT`
+- If dropdown is empty, change quotation status: either use "Save & Send" button in quotation editor, or run:
+  ```sql
+  UPDATE "Quotation" SET status = 'SENT' WHERE "quotationNumber" = 'ACME-Q-...';
+  ```
+- File picker accepts: PDF, PNG, JPG, DOC, DOCX (max 10MB)
+- After selecting a file, filename should appear in green text
+- Upload directory: `/home/ubuntu/repos/Test/uploads` (gitignored)
 
-## Navigation Tips
+### 3. Email Dialog
+- Open quotation editor (`/quotations/{id}/edit`) → click "Email" button in toolbar
+- "Email" and "PDF" buttons only appear when editing an existing quotation (not on `/quotations/new`)
+- Dialog pre-fills customer email from the database
+- Without SMTP configured, sending will return an informative error (not a crash)
 
-- Sidebar has 9 items: Dashboard, Companies, Customers, Quotations, Purchase Orders, Delivery Orders, Invoices, Audit Logs, Settings
-- Company/Customer forms appear inline (not modals) when clicking "Add" buttons
-- Quotation editor is at `/quotations/new` — uses split-screen layout
-- Settings page has toggle switches for each module + Save Settings button
+### 4. Invoice PDF Export
+- Requires: Company → Customer → Quotation → Delivery Order → Invoice (full workflow)
+- Navigate to `/invoices` and click download PDF icon
+- Verify: INVOICE header, invoice number, items, totals, payment details section, DO reference
 
-## Known Issues
+### 5. Full Document Workflow
+1. Create Company (with short code like "ACME")
+2. Create Customer
+3. Create Quotation (split-screen editor with live preview)
+4. Send Quotation (changes status to SENT)
+5. Upload PO (linked to SENT quotation)
+6. Create Delivery Order (linked to quotation)
+7. Create Invoice (linked to DO)
 
-- **Edit page data loading**: The quotation edit page (`/quotations/{id}/edit`) might not populate form fields with saved data after redirect from creation. The quotation is saved correctly (verifiable in the list view), but the edit form may show empty/default values. This may be a race condition or missing data fetch in the edit page component.
-- **Dropdown selection**: When selecting from Company/Customer dropdowns, click the dropdown first to open it, then click the option. The DOM uses native `<select>` elements.
-- **Number inputs**: When changing number fields (Qty, Unit Price), use triple-click to select all existing text before typing the new value to avoid appending.
+## Document ID Format
+- Quotation: `COMPANYSHORT-Q-YYYYMMDD-###` (e.g., ACME-Q-20260501-001)
+- Delivery Order: `COMPANYSHORT-DO-YYYYMMDD-###`
+- Invoice: `COMPANYSHORT-I-YYYYMMDD-###`
+- Revisions append `-R1`, `-R2`, etc.
 
-## Testing Approach
-
-- Use browser GUI interactions (not curl/API calls) for the most realistic end-to-end testing
-- Record the browser session for visual proof
-- Annotate key moments: test_start when beginning each test, assertion when verifying results
-- Take screenshots at critical verification points (calculations, list views, dashboard metrics)
-- Always verify both the editor values AND the live preview values match for quotation tests
+## Known Gotchas
+- The base branch is `base`, not `main` or `master`
+- Next.js 16 has breaking changes — read docs in `node_modules/next/dist/docs/` before modifying code
+- "middleware" file convention is deprecated in favor of "proxy" (warning is pre-existing, not a bug)
+- Quotation calculations: Subtotal - Discount + Tax = Grand Total
+- File uploads use the Web API `FormData`, not multer middleware directly — the upload route handles `request.formData()`
+- For Playwright-based file input testing, use CDP at `http://localhost:29229` and `setInputFiles()` on the hidden file input
+- Playwright may need to be installed globally: `npm install -g playwright`, then use `NODE_PATH` to resolve it
