@@ -84,9 +84,13 @@ export default function DeliveryOrdersPage() {
             <tbody className="divide-y divide-gray-100">
               {deliveryOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-4 py-12 text-center text-gray-500">
+                  <td colSpan={6} className="px-4 py-16 text-center text-gray-500">
                     <Truck className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                    <p>No delivery orders found</p>
+                    <p className="font-medium text-gray-600">No delivery orders found</p>
+                    <p className="text-sm text-gray-400 mt-1">Create a delivery order from an approved quotation</p>
+                    <Link href="/delivery-orders/new" className="inline-flex items-center gap-2 mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium transition-colors">
+                      <Plus className="w-4 h-4" /> New Delivery Order
+                    </Link>
                   </td>
                 </tr>
               ) : (

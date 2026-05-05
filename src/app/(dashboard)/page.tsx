@@ -112,14 +112,14 @@ export default async function DashboardPage() {
             <Link
               key={card.title}
               href={card.href}
-              className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md transition-shadow"
+              className="bg-white rounded-xl border border-gray-200 p-6 hover:shadow-md hover:border-gray-300 transition-all group"
             >
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-lg ${card.color}`}>
+                <div className={`p-3 rounded-xl ${card.color} transition-transform group-hover:scale-110`}>
                   <Icon className="w-6 h-6" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">{card.title}</p>
+                  <p className="text-sm text-gray-500">{card.title}</p>
                   <p className="text-2xl font-bold text-gray-900">{card.value}</p>
                 </div>
               </div>
@@ -134,30 +134,30 @@ export default async function DashboardPage() {
           <div className="grid grid-cols-2 gap-3">
             <Link
               href="/quotations/new"
-              className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+              className="p-4 rounded-xl border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-all text-center group"
             >
-              <FileText className="w-8 h-8 mx-auto mb-2 text-blue-600" />
+              <FileText className="w-8 h-8 mx-auto mb-2 text-blue-600 transition-transform group-hover:scale-110" />
               <p className="text-sm font-medium text-gray-700">New Quotation</p>
             </Link>
             <Link
               href="/companies"
-              className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+              className="p-4 rounded-xl border border-gray-200 hover:border-purple-300 hover:bg-purple-50 transition-all text-center group"
             >
-              <Upload className="w-8 h-8 mx-auto mb-2 text-purple-600" />
+              <Upload className="w-8 h-8 mx-auto mb-2 text-purple-600 transition-transform group-hover:scale-110" />
               <p className="text-sm font-medium text-gray-700">Manage Companies</p>
             </Link>
             <Link
               href="/delivery-orders/new"
-              className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+              className="p-4 rounded-xl border border-gray-200 hover:border-orange-300 hover:bg-orange-50 transition-all text-center group"
             >
-              <Truck className="w-8 h-8 mx-auto mb-2 text-orange-600" />
+              <Truck className="w-8 h-8 mx-auto mb-2 text-orange-600 transition-transform group-hover:scale-110" />
               <p className="text-sm font-medium text-gray-700">New Delivery Order</p>
             </Link>
             <Link
               href="/invoices/new"
-              className="p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors text-center"
+              className="p-4 rounded-xl border border-gray-200 hover:border-indigo-300 hover:bg-indigo-50 transition-all text-center group"
             >
-              <Receipt className="w-8 h-8 mx-auto mb-2 text-indigo-600" />
+              <Receipt className="w-8 h-8 mx-auto mb-2 text-indigo-600 transition-transform group-hover:scale-110" />
               <p className="text-sm font-medium text-gray-700">New Invoice</p>
             </Link>
           </div>

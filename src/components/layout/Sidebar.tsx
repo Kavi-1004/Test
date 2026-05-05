@@ -47,8 +47,17 @@ export default function Sidebar() {
   const nav = (
     <nav className="flex flex-col h-full">
       <div className="p-4 border-b border-gray-200">
-        <h1 className="text-xl font-bold text-blue-600">DocManager</h1>
-        <p className="text-xs text-gray-500 mt-0.5">Document Management</p>
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 bg-blue-600 rounded-xl flex items-center justify-center flex-shrink-0">
+            <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+          </div>
+          <div>
+            <h1 className="text-lg font-bold text-gray-900">DocManager</h1>
+            <p className="text-xs text-gray-500 leading-none">Document Management</p>
+          </div>
+        </div>
       </div>
       <div className="flex-1 overflow-y-auto py-4">
         <ul className="space-y-1 px-3">
@@ -60,13 +69,13 @@ export default function Sidebar() {
                 <Link
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
-                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all ${
                     active
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-700 hover:bg-gray-100"
+                      ? "bg-blue-50 text-blue-700 shadow-sm"
+                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                   }`}
                 >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
+                  <Icon className={`w-5 h-5 flex-shrink-0 ${active ? "text-blue-600" : ""}`} />
                   {item.label}
                 </Link>
               </li>
@@ -77,7 +86,7 @@ export default function Sidebar() {
       <div className="p-3 border-t border-gray-200">
         <button
           onClick={handleLogout}
-          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-100 w-full transition-colors"
+          className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-600 hover:bg-red-50 hover:text-red-600 w-full transition-colors"
         >
           <LogOut className="w-5 h-5" />
           Sign out
