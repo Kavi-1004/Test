@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, shortCode, address, phone, email, website, logoUrl, taxId, taxRate, bankName, bankAccount, bankBranch, swiftCode } = body;
+  const { name, shortCode, address, phone, email, website, logoUrl, registrationNo, taxId, taxRate, bankName, bankAccount, bankBranch, swiftCode } = body;
 
   if (!name || !shortCode) {
     return NextResponse.json(
@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
       email,
       website,
       logoUrl,
+      registrationNo,
       taxId,
       taxRate: taxRate ? parseFloat(taxRate) : 0,
       bankName,

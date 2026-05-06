@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { companyId, customerId, title, items, discount, taxRate, terms, warranty, footer, status } = body;
+  const { companyId, customerId, title, items, discount, taxRate, terms, warranty, footer, status, validity, salesPerson, salesPhone, salesEmail, fontFamily, currency } = body;
 
   if (!companyId || !customerId) {
     return NextResponse.json(
@@ -86,9 +86,15 @@ export async function POST(request: NextRequest) {
       taxAmount,
       subtotal,
       grandTotal,
+      validity: validity || 30,
+      salesPerson,
+      salesPhone,
+      salesEmail,
       terms,
       warranty,
       footer,
+      fontFamily: fontFamily || "Helvetica",
+      currency: currency || "LKR",
       items: {
         create: parsedItems,
       },

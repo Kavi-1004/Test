@@ -11,6 +11,8 @@ interface Company {
   phone: string | null;
   email: string | null;
   website: string | null;
+  logoUrl: string | null;
+  registrationNo: string | null;
   taxId: string | null;
   taxRate: number | null;
   bankName: string | null;
@@ -27,9 +29,10 @@ export default function CompaniesPage() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [form, setForm] = useState({
     name: "", shortCode: "", address: "", phone: "", email: "",
-    website: "", taxId: "", taxRate: "", bankName: "", bankAccount: "",
+    website: "", logoUrl: "", registrationNo: "", taxId: "", taxRate: "", bankName: "", bankAccount: "",
     bankBranch: "", swiftCode: "",
   });
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -43,7 +46,7 @@ export default function CompaniesPage() {
   function resetForm() {
     setForm({
       name: "", shortCode: "", address: "", phone: "", email: "",
-      website: "", taxId: "", taxRate: "", bankName: "", bankAccount: "",
+      website: "", logoUrl: "", registrationNo: "", taxId: "", taxRate: "", bankName: "", bankAccount: "",
       bankBranch: "", swiftCode: "",
     });
     setEditing(null);
@@ -58,6 +61,8 @@ export default function CompaniesPage() {
       phone: c.phone || "",
       email: c.email || "",
       website: c.website || "",
+      logoUrl: c.logoUrl || "",
+      registrationNo: c.registrationNo || "",
       taxId: c.taxId || "",
       taxRate: String(c.taxRate || ""),
       bankName: c.bankName || "",
@@ -152,6 +157,39 @@ export default function CompaniesPage() {
               <label className="block text-sm font-medium text-gray-700 mb-1">Website</label>
               <input value={form.website} onChange={(e) => setForm({ ...form, website: e.target.value })}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Registration No</label>
+              <input value={form.registrationNo} onChange={(e) => setForm({ ...form, registrationNo: e.target.value })}
+                placeholder="e.g., TAX-123456"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+            <div className="md:col-span-2">
+              <label className="block text-sm font-medium text-gray-700 mb-1">Company Logo</label>
+              <div className="flex items-center gap-4">
+                {form.logoUrl && (
+                  <img src={form.logoUrl} alt="Logo" className="w-16 h-16 object-contain border rounded" />
+                )}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/jpg"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploading(true);
+                    const fd = new FormData();
+                    fd.append("file", file);
+                    const res = await fetch("/api/upload", { method: "POST", body: fd });
+                    if (res.ok) {
+                      const data = await res.json();
+                      setForm({ ...form, logoUrl: data.fileUrl });
+                    }
+                    setUploading(false);
+                  }}
+                  className="text-sm text-gray-600"
+                />
+                {uploading && <span className="text-sm text-blue-600">Uploading...</span>}
+              </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Tax ID</label>
