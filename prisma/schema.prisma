@@ -42,6 +42,7 @@ model Company {
   email           String?
   website         String?
   logoUrl         String?
+  registrationNo  String?
   taxId           String?
   taxRate         Float?   @default(0)
   bankName        String?
@@ -88,9 +89,15 @@ model Quotation {
   taxAmount       Float              @default(0)
   subtotal        Float              @default(0)
   grandTotal      Float              @default(0)
+  validity        Int                @default(30)
+  salesPerson     String?
+  salesPhone      String?
+  salesEmail      String?
   terms           String?
   warranty        String?
   footer          String?
+  fontFamily      String             @default("Helvetica")
+  currency        String             @default("LKR")
   revisionNumber  Int                @default(0)
   parentId        String?
   parent          Quotation?         @relation("QuotationRevisions", fields: [parentId], references: [id])

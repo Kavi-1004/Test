@@ -23,6 +23,8 @@ interface Company {
   address: string | null;
   phone: string | null;
   email: string | null;
+  logoUrl: string | null;
+  registrationNo: string | null;
   taxRate: number | null;
 }
 
@@ -39,12 +41,19 @@ interface Props {
   quotationId?: string;
 }
 
+const FONT_OPTIONS = [
+  { value: "Helvetica", label: "Helvetica" },
+  { value: "Times-Roman", label: "Times New Roman" },
+  { value: "Courier", label: "Courier" },
+];
+
 export default function QuotationEditor({ quotationId }: Props) {
   const router = useRouter();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const [companyId, setCompanyId] = useState("");
   const [customerId, setCustomerId] = useState("");
@@ -60,6 +69,12 @@ export default function QuotationEditor({ quotationId }: Props) {
   const [footer, setFooter] = useState("");
   const [quotationNumber, setQuotationNumber] = useState("");
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
+  const [validity, setValidity] = useState(30);
+  const [salesPerson, setSalesPerson] = useState("");
+  const [salesPhone, setSalesPhone] = useState("");
+  const [salesEmail, setSalesEmail] = useState("");
+  const [fontFamily, setFontFamily] = useState("Helvetica");
+  const [currency, setCurrency] = useState("LKR");
 
   const selectedCompany = companies.find((c) => c.id === companyId);
   const selectedCustomer = customers.find((c) => c.id === customerId);
@@ -105,6 +120,12 @@ export default function QuotationEditor({ quotationId }: Props) {
           setFooter((q.footer as string) || "");
           setQuotationNumber(q.quotationNumber as string);
           setDate((q.date as string).split("T")[0]);
+          setValidity((q.validity as number) || 30);
+          setSalesPerson((q.salesPerson as string) || "");
+          setSalesPhone((q.salesPhone as string) || "");
+          setSalesEmail((q.salesEmail as string) || "");
+          setFontFamily((q.fontFamily as string) || "Helvetica");
+          setCurrency((q.currency as string) || "LKR");
         }
         setLoading(false);
       })
@@ -138,10 +159,11 @@ export default function QuotationEditor({ quotationId }: Props) {
 
   async function handleSave(saveStatus?: string) {
     if (!companyId || !customerId) {
-      alert("Please select a company and customer");
+      setError("Please select a company and customer");
       return;
     }
 
+    setError("");
     setSaving(true);
     try {
       const payload = {
@@ -155,6 +177,12 @@ export default function QuotationEditor({ quotationId }: Props) {
         terms,
         warranty,
         footer,
+        validity,
+        salesPerson,
+        salesPhone,
+        salesEmail,
+        fontFamily,
+        currency,
       };
 
       const method = quotationId ? "PUT" : "POST";
@@ -173,7 +201,12 @@ export default function QuotationEditor({ quotationId }: Props) {
         } else {
           setRefreshKey((k) => k + 1);
         }
+      } else {
+        const errData = await res.json().catch(() => null);
+        setError(errData?.error || `Save failed (${res.status})`);
       }
+    } catch (err) {
+      setError(`Save failed: ${err instanceof Error ? err.message : "Unknown error"}`);
     } finally {
       setSaving(false);
     }
@@ -285,6 +318,12 @@ export default function QuotationEditor({ quotationId }: Props) {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
+          {error}
+        </div>
+      )}
+
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
         {/* Left: Form Editor */}
         <div className="space-y-6 print:hidden">
@@ -340,6 +379,81 @@ export default function QuotationEditor({ quotationId }: Props) {
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Validity (days)</label>
+                <input
+                  type="number"
+                  value={validity}
+                  onChange={(e) => setValidity(parseInt(e.target.value) || 30)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Currency</label>
+                <select
+                  value={currency}
+                  onChange={(e) => setCurrency(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="LKR">LKR (Rs.)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR</option>
+                  <option value="GBP">GBP</option>
+                  <option value="SGD">SGD</option>
+                  <option value="MYR">MYR</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Sales Person */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold mb-4">Sales Details</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Person</label>
+                <input
+                  value={salesPerson}
+                  onChange={(e) => setSalesPerson(e.target.value)}
+                  placeholder="Sales person name"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Phone</label>
+                <input
+                  value={salesPhone}
+                  onChange={(e) => setSalesPhone(e.target.value)}
+                  placeholder="Phone number"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sales Email</label>
+                <input
+                  value={salesEmail}
+                  onChange={(e) => setSalesEmail(e.target.value)}
+                  placeholder="Email address"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Font Selection */}
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold mb-4">PDF Settings</h2>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Font Family</label>
+              <select
+                value={fontFamily}
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                {FONT_OPTIONS.map((f) => (
+                  <option key={f.value} value={f.value}>{f.label}</option>
+                ))}
+              </select>
             </div>
           </div>
 
@@ -393,7 +507,7 @@ export default function QuotationEditor({ quotationId }: Props) {
                     />
                   </div>
                   <div className="col-span-1 md:col-span-1 flex items-center justify-center pt-2">
-                    <span className="text-sm font-medium text-gray-700">${item.total.toFixed(2)}</span>
+                    <span className="text-sm font-medium text-gray-700">{currency === "LKR" ? "Rs." : "$"}{item.total.toFixed(2)}</span>
                   </div>
                   <div className="col-span-1 flex items-center justify-center pt-1">
                     <button
@@ -414,7 +528,7 @@ export default function QuotationEditor({ quotationId }: Props) {
             <h2 className="text-lg font-semibold mb-4">Totals</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Discount ($)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Discount ({currency === "LKR" ? "Rs." : "$"})</label>
                 <input
                   type="number"
                   step="0.01"
@@ -435,10 +549,10 @@ export default function QuotationEditor({ quotationId }: Props) {
               </div>
             </div>
             <div className="mt-4 space-y-2 text-sm">
-              <div className="flex justify-between"><span className="text-gray-600">Subtotal:</span><span className="font-medium">${subtotal.toFixed(2)}</span></div>
-              {discount > 0 && <div className="flex justify-between"><span className="text-gray-600">Discount:</span><span className="font-medium text-red-600">-${discount.toFixed(2)}</span></div>}
-              {taxRate > 0 && <div className="flex justify-between"><span className="text-gray-600">Tax ({taxRate}%):</span><span className="font-medium">${taxAmount.toFixed(2)}</span></div>}
-              <div className="flex justify-between text-lg font-bold border-t pt-2"><span>Grand Total:</span><span>${grandTotal.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Subtotal:</span><span className="font-medium">{currency === "LKR" ? "Rs." : "$"}{subtotal.toFixed(2)}</span></div>
+              {discount > 0 && <div className="flex justify-between"><span className="text-gray-600">Discount:</span><span className="font-medium text-red-600">-{currency === "LKR" ? "Rs." : "$"}{discount.toFixed(2)}</span></div>}
+              {taxRate > 0 && <div className="flex justify-between"><span className="text-gray-600">Tax ({taxRate}%):</span><span className="font-medium">{currency === "LKR" ? "Rs." : "$"}{taxAmount.toFixed(2)}</span></div>}
+              <div className="flex justify-between text-lg font-bold border-t pt-2"><span>Grand Total:</span><span>{currency === "LKR" ? "Rs." : "$"}{grandTotal.toFixed(2)}</span></div>
             </div>
           </div>
 
@@ -484,6 +598,12 @@ export default function QuotationEditor({ quotationId }: Props) {
               terms={terms}
               warranty={warranty}
               footer={footer}
+              validity={validity}
+              salesPerson={salesPerson}
+              salesPhone={salesPhone}
+              salesEmail={salesEmail}
+              fontFamily={fontFamily}
+              currency={currency}
             />
           </div>
         </div>

@@ -42,6 +42,12 @@ export async function GET(
     terms: quotation.terms,
     warranty: quotation.warranty,
     footer: quotation.footer,
+    validity: quotation.validity,
+    salesPerson: quotation.salesPerson,
+    salesPhone: quotation.salesPhone,
+    salesEmail: quotation.salesEmail,
+    fontFamily: quotation.fontFamily,
+    currency: quotation.currency,
   };
 
   const buffer = await renderToBuffer(
